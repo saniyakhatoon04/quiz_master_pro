@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+
+{% block title %}Performance Reports & Analytics - QuizMaster Pro{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8" id="analyticsContainer">
+
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+            <div class="flex items-center gap-2">
+                <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-brand-500/20 text-brand-300 border border-brand-500/30">
+                    Analytical Intelligence
+                </span>
+                <span class="text-xs text-slate-400">• {{ data.user.full_name }}</span>
+            </div>
+            <h1 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight mt-1">
+                Performance Reports & Diagnostics
+            </h1>
+            <p class="text-xs text-slate-400 mt-1">
+                Real-time metrics, subject mastery breakdowns, and automated weak topic identification.
+            </p>
+        </div>
+
+        <a href="{{ url_for('quiz_weak_recovery') }}" class="px-5 py-3 rounded-xl text-xs sm:text-sm font-bold text-white bg-gradient-to-r from-rose-600 to-amber-600 hover:from-rose-500 hover:to-amber-500 shadow-lg shadow-rose-600/20 transition-all flex items-center gap-2 self-start sm:self-auto">
+            <i class="fa-solid fa-shield-virus"></i> Launch Weak Subject Drill
+        </a>
+    </div>
+
+    <!-- 4 High-Level Metric Tiles -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        <div class="p-5 rounded-2xl bg-slate-900/80 border border-slate-800">
+            <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Mastery Grade</span>
+            <div class="mt-3 flex items-baseline gap-2">
+                <span class="text-3xl font-extrabold text-indigo-400 font-mono">{{ data.grade }}</span>
+                <span class="text-xs text-slate-400">Tier Rating</span>
+            </div>
+            <p class="text-[11px] text-slate-500 mt-1">Overall candidate rank</p>
+        </div>
+
+        <div class="p-5 rounded-2xl bg-slate-900/80 border border-slate-800">
+            <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Average Accuracy</span>
+            <div class="mt-3 flex items-baseline gap-2">
+                <span class="text-3xl font-extrabold text-white">{{ data.avg_score }}%</span>
+                <span class="text-xs text-emerald-400 font-semibold">avg marks</span>
+            </div>
+            <p class="text-[11px] text-slate-500 mt-1">Across {{ data.total_quizzes }} assessments</p>
+        </div>
+
+        <div class="p-5 rounded-2xl bg-slate-900/80 border border-slate-800">
+            <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Total Study Time</span>
+            <div class="mt-3 flex items-baseline gap-2">
+                <span class="text-3xl font-extrabold text-white">{{ (data.total_time_seconds / 60)|round(1) }}</span>
+                <span class="text-xs text-slate-400">minutes</span>
+            </div>
+            <p class="text-[11px] text-slate-500 mt-1">{{ data.total_time_seconds }} cumulative seconds</p>
+        </div>
+
+        <div class="p-5 rounded-2xl bg-slate-900/80 border border-slate-800">
+            <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Streak Endurance</span>
+            <div class="mt-3 flex items-baseline gap-2">
+                <span class="text-3xl font-extrabold text-amber-400">{{ data.user.current_streak }}d</span>
+                <span class="text-xs text-slate-400">current</span>
+            </div>
+            <p class="text-[11px] text-slate-500 mt-1">Peak record: {{ data.user.longest_streak }} days</p>
+        </div>
+    </div>
+
+    <!-- Interactive Charts Row 1 -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Score Trajectory Line Chart -->
+        <div class="p-6 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-xl">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-chart-line text-indigo-400"></i>
+                    <h3 class="text-sm font-bold text-white uppercase tracking-wider">Score Progression Over Time</h3>
+                </div>
+                <span class="text-xs text-slate-400">Recent Quizzes</span>
+            </div>
+            <div class="h-64">
+                <canvas id="scoreTrendChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Category Accuracy Radar / Bar Chart -->
+        <div class="p-6 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-xl">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-layer-group text-emerald-400"></i>
+                    <h3 class="text-sm font-bold text-white uppercase tracking-wider">Category Mastery Accuracy</h3>
+                </div>
+                <span class="text-xs text-slate-400">% Accuracy Rate</span>
+            </div>
+            <div class="h-64">
+                <canvas id="categoryMasteryChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Diagnostic Weak Subjects Assessment Table -->
+    <div class="p-6 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-xl space-y-4">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <i class="fa-solid fa-triangle-exclamation text-rose-400"></i>
+                <h3 class="text-sm font-bold text-white uppercase tracking-wider">Detailed Subject Diagnostic Matrix</h3>
+            </div>
+            <span class="text-xs text-slate-400">Target score: 80%+</span>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+                <thead>
+                    <tr class="text-slate-400 border-b border-slate-800">
+                        <th class="pb-3 font-semibold">Subject Category</th>
+                        <th class="pb-3 font-semibold">Questions Answered</th>
+                        <th class="pb-3 font-semibold">Correct Marks</th>
+                        <th class="pb-3 font-semibold">Accuracy</th>
+                        <th class="pb-3 font-semibold">Diagnostic Rating</th>
+                        <th class="pb-3 font-semibold text-right">Targeted Action</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800/60">
+                    {% for cat in data.weak_categories %}
+                    <tr class="hover:bg-slate-800/40 transition-colors">
+                        <td class="py-3.5 font-bold text-white">{{ cat.category_name }}</td>
+                        <td class="py-3.5 text-slate-300">{{ cat.total }} questions</td>
+                        <td class="py-3.5 text-slate-300">{{ cat.correct }}</td>
+                        <td class="py-3.5">
+                            <div class="flex items-center gap-2">
+                                <span class="font-mono font-bold {{ 'text-rose-400' if cat.accuracy < 60 else ('text-amber-400' if cat.accuracy < 80 else 'text-emerald-400') }}">
+                                    {{ cat.accuracy }}%
+                                </span>
+                                <div class="w-16 h-1.5 rounded-full bg-slate-800 overflow-hidden hidden sm:block">
+                                    <div class="h-full rounded-full {{ 'bg-rose-500' if cat.accuracy < 60 else ('bg-amber-500' if cat.accuracy < 80 else 'bg-emerald-500') }}" style="width: {{ cat.accuracy }}%"></div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="py-3.5">
+                            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider
+                                {% if cat.status == 'Weak' %} bg-rose-500/15 text-rose-400 border border-rose-500/30
+                                {% elif cat.status == 'Average' %} bg-amber-500/15 text-amber-400 border border-amber-500/30
+                                {% else %} bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 {% endif %}">
+                                {% if cat.status == 'Weak' %}<i class="fa-solid fa-triangle-exclamation mr-1"></i> Weak Subject
+                                {% elif cat.status == 'Average' %}<i class="fa-solid fa-arrows-split-up-and-left mr-1"></i> Moderate
+                                {% else %}<i class="fa-solid fa-check mr-1"></i> Mastered{% endif %}
+                            </span>
+                        </td>
+                        <td class="py-3.5 text-right">
+                            <a href="{{ url_for('quiz', category=cat.category_id, difficulty='all') }}" class="px-3 py-1 rounded-lg text-xs font-bold {{ 'bg-rose-600 hover:bg-rose-500 text-white' if cat.status == 'Weak' else 'bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700' }} transition-colors">
+                                Practice Category
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+{% endblock %}

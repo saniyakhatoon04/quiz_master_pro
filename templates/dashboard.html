@@ -1,0 +1,364 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - QuizMaster Pro{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+
+    <!-- Welcome & Streak Header Banner -->
+    <div class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-900 via-indigo-950/60 to-slate-900 border border-slate-800 p-6 sm:p-8 shadow-2xl">
+        <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div class="space-y-2">
+                <div class="flex items-center gap-2">
+                    <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-brand-500/20 text-brand-300 border border-brand-500/30">
+                        Candidate Dashboard
+                    </span>
+                    <span class="text-xs text-slate-400">• {{ user.role.capitalize() }}</span>
+                </div>
+                <h1 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+                    Welcome back, {{ user.full_name }}! 👋
+                </h1>
+                <p class="text-sm text-slate-400 max-w-xl">
+                    Ready to challenge your intellect today? Select a subject or launch a rapid training drill to keep your daily streak alive.
+                </p>
+            </div>
+
+            <!-- Quick Action Start Weak Recovery or Rapid Quiz -->
+            <div class="flex flex-wrap items-center gap-3">
+                {% if primary_weak_subject %}
+                <a href="{{ url_for('quiz_weak_recovery') }}" class="px-5 py-3 rounded-xl text-xs sm:text-sm font-bold text-white bg-gradient-to-r from-rose-600 to-amber-600 hover:from-rose-500 hover:to-amber-500 shadow-lg shadow-rose-600/20 transition-all flex items-center gap-2">
+                    <i class="fa-solid fa-bolt-lightning animate-bounce"></i> Practice Weak: {{ primary_weak_subject.category_name }}
+                </a>
+                {% endif %}
+                <a href="#categorySection" class="px-5 py-3 rounded-xl text-xs sm:text-sm font-bold text-white bg-brand-600 hover:bg-brand-500 shadow-lg shadow-brand-600/30 transition-all flex items-center gap-2">
+                    <i class="fa-solid fa-play"></i> Launch New Quiz
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4 Stats Overview Cards -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        <!-- Streak Card -->
+        <div class="p-5 sm:p-6 rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-amber-500/40 transition-colors">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Daily Streak</span>
+                <div class="w-9 h-9 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center text-base">
+                    <i class="fa-solid fa-fire animate-pulse"></i>
+                </div>
+            </div>
+            <div class="mt-3 flex items-baseline gap-2">
+                <span class="text-2xl sm:text-3xl font-extrabold text-white">{{ user.current_streak }}</span>
+                <span class="text-xs text-amber-400 font-medium">days active</span>
+            </div>
+            <p class="text-[11px] text-slate-500 mt-1">Best record: {{ user.longest_streak }} days</p>
+        </div>
+
+        <!-- Total Quizzes -->
+        <div class="p-5 sm:p-6 rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-indigo-500/40 transition-colors">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Quizzes Taken</span>
+                <div class="w-9 h-9 rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center text-base">
+                    <i class="fa-solid fa-graduation-cap"></i>
+                </div>
+            </div>
+            <div class="mt-3 flex items-baseline gap-2">
+                <span class="text-2xl sm:text-3xl font-extrabold text-white">{{ total_quizzes }}</span>
+                <span class="text-xs text-slate-400">completed</span>
+            </div>
+            <p class="text-[11px] text-slate-500 mt-1">Total score: {{ user.total_score }} points</p>
+        </div>
+
+        <!-- Average Accuracy -->
+        <div class="p-5 sm:p-6 rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-emerald-500/40 transition-colors">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Average Score</span>
+                <div class="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center text-base">
+                    <i class="fa-solid fa-chart-line"></i>
+                </div>
+            </div>
+            <div class="mt-3 flex items-baseline gap-2">
+                <span class="text-2xl sm:text-3xl font-extrabold text-white">{{ avg_accuracy }}%</span>
+                <span class="text-xs {{ 'text-emerald-400' if avg_accuracy >= 70 else 'text-amber-400' }}">accuracy</span>
+            </div>
+            <p class="text-[11px] text-slate-500 mt-1">Calculated across attempts</p>
+        </div>
+
+        <!-- Total XP -->
+        <div class="p-5 sm:p-6 rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-purple-500/40 transition-colors">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Experience Points</span>
+                <div class="w-9 h-9 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center text-base">
+                    <i class="fa-solid fa-star"></i>
+                </div>
+            </div>
+            <div class="mt-3 flex items-baseline gap-2">
+                <span class="text-2xl sm:text-3xl font-extrabold text-white">{{ user.xp }}</span>
+                <span class="text-xs text-purple-400 font-semibold">XP</span>
+            </div>
+            <p class="text-[11px] text-slate-500 mt-1">Earned via correct & timed answers</p>
+        </div>
+    </div>
+
+    <!-- 7-Day Streak Calendar & Weak Subject Banner Row -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- 7-Day Streak Calendar Tracker (Left 1 col) -->
+        <div class="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 flex flex-col justify-between">
+            <div>
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-calendar-check text-amber-400"></i>
+                        <h3 class="text-sm font-bold text-white uppercase tracking-wider">7-Day Streak Tracker</h3>
+                    </div>
+                    <span class="text-xs text-amber-400 font-semibold">{{ user.current_streak }} Day Streak</span>
+                </div>
+                <p class="text-xs text-slate-400 mb-5">Take at least 1 quiz every day to maintain your momentum and unlock streak badges.</p>
+
+                <!-- Week Visual Dots -->
+                <div class="grid grid-cols-7 gap-2 text-center">
+                    {% for day in streak_calendar %}
+                    <div class="flex flex-col items-center">
+                        <span class="text-[11px] font-semibold text-slate-400 mb-1.5">{{ day.day_name }}</span>
+                        <div class="w-9 h-9 rounded-xl flex items-center justify-center text-xs font-bold transition-all
+                            {% if day.completed %}
+                                bg-gradient-to-tr from-amber-500 to-orange-500 text-white shadow-md shadow-amber-500/30 scale-105
+                            {% elif day.is_today %}
+                                border-2 border-dashed border-amber-500/60 bg-amber-500/10 text-amber-300 animate-pulse
+                            {% else %}
+                                bg-slate-800 text-slate-500 border border-slate-700/50
+                            {% endif %}"
+                            title="{{ day.date }}: {% if day.completed %}Completed ({{ day.attempts }} quiz){% else %}Incomplete{% endif %}">
+                            {% if day.completed %}
+                                <i class="fa-solid fa-check"></i>
+                            {% elif day.is_today %}
+                                <i class="fa-solid fa-fire text-amber-400"></i>
+                            {% else %}
+                                {{ day.day_num }}
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="mt-5 pt-4 border-t border-slate-800 text-center">
+                <span class="text-xs text-slate-400">
+                    Next milestone: <span class="font-bold text-amber-300">7-Day Blaze Badge</span>
+                </span>
+            </div>
+        </div>
+
+        <!-- Diagnostic Weak Subjects Alert Card (Right 2 cols) -->
+        <div class="lg:col-span-2 p-6 rounded-2xl bg-slate-900/80 border border-slate-800">
+            <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-triangle-exclamation text-rose-400"></i>
+                    <h3 class="text-sm font-bold text-white uppercase tracking-wider">Topic Mastery & Weak Subject Diagnostics</h3>
+                </div>
+                <a href="{{ url_for('analytics') }}" class="text-xs font-semibold text-indigo-400 hover:text-indigo-300">
+                    Full Analytics <i class="fa-solid fa-arrow-right ml-1"></i>
+                </a>
+            </div>
+
+            <p class="text-xs text-slate-400 mb-4">
+                Our diagnostic engine monitors your accuracy across categories. Subjects under 60% are flagged for targeted recovery.
+            </p>
+
+            {% if weak_categories %}
+            <div class="space-y-3">
+                {% for item in weak_categories[:4] %}
+                <div>
+                    <div class="flex items-center justify-between text-xs mb-1">
+                        <span class="font-semibold text-slate-300">{{ item.category_name }}</span>
+                        <div class="flex items-center gap-2">
+                            <span class="text-slate-400">{{ item.correct }}/{{ item.total }} correct</span>
+                            <span class="font-bold px-2 py-0.5 rounded text-[10px]
+                                {% if item.status == 'Weak' %} bg-rose-500/20 text-rose-400 border border-rose-500/30
+                                {% elif item.status == 'Average' %} bg-amber-500/20 text-amber-400 border border-amber-500/30
+                                {% else %} bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 {% endif %}">
+                                {{ item.status }} ({{ item.accuracy }}%)
+                            </span>
+                        </div>
+                    </div>
+                    <!-- Progress Bar -->
+                    <div class="w-full h-2 rounded-full bg-slate-800 overflow-hidden">
+                        <div class="h-full rounded-full transition-all duration-500
+                            {% if item.status == 'Weak' %} bg-rose-500
+                            {% elif item.status == 'Average' %} bg-amber-500
+                            {% else %} bg-emerald-500 {% endif %}"
+                            style="width: {{ item.accuracy }}%"></div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            {% if primary_weak_subject %}
+            <div class="mt-4 p-3 rounded-xl bg-rose-950/40 border border-rose-500/30 flex items-center justify-between">
+                <div class="flex items-center gap-2.5 text-xs text-rose-200">
+                    <i class="fa-solid fa-shield-virus text-rose-400 text-sm"></i>
+                    <span>Boost accuracy in <strong>{{ primary_weak_subject.category_name }}</strong> to improve your overall rating.</span>
+                </div>
+                <a href="{{ url_for('quiz_weak_recovery') }}" class="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs shadow transition-colors whitespace-nowrap">
+                    Start Recovery Drill
+                </a>
+            </div>
+            {% endif %}
+
+            {% else %}
+            <div class="text-center py-6 text-slate-500">
+                <i class="fa-solid fa-chart-simple text-3xl mb-2 text-slate-600"></i>
+                <p class="text-xs">Take your first quiz to generate category diagnostic reports!</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Category Quiz Selection Arena -->
+    <div id="categorySection" class="space-y-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+                <h2 class="text-xl font-bold text-white tracking-tight">Select Category & Difficulty</h2>
+                <p class="text-xs text-slate-400">Choose your subject and configure your timed challenge.</p>
+            </div>
+            <div class="flex items-center gap-2">
+                <a href="{{ url_for('quiz', category='all', difficulty='all') }}" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition-colors flex items-center gap-1.5">
+                    <i class="fa-solid fa-shuffle text-indigo-400"></i> Mixed All-Rounder
+                </a>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for cat in categories %}
+            <div class="p-6 rounded-2xl bg-slate-900/90 border border-slate-800 hover:border-indigo-500/50 hover:bg-slate-900 transition-all flex flex-col justify-between group shadow-lg">
+                <div>
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="w-12 h-12 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center text-xl group-hover:scale-105 transition-transform">
+                            <i class="fa-solid fa-{{ cat.icon }}"></i>
+                        </div>
+                        <span class="text-xs font-medium px-2.5 py-1 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
+                            {{ cat.question_count }} Qs available
+                        </span>
+                    </div>
+
+                    <h3 class="text-lg font-bold text-white group-hover:text-indigo-300 transition-colors">{{ cat.name }}</h3>
+                    <p class="text-xs text-slate-400 mt-2 line-clamp-2">{{ cat.description }}</p>
+                </div>
+
+                <div class="mt-6 pt-4 border-t border-slate-800/80 space-y-3">
+                    <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Select Difficulty:</p>
+                    <div class="grid grid-cols-3 gap-2">
+                        <a href="{{ url_for('quiz', category=cat.id, difficulty='Easy') }}" class="text-center py-2 px-2 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 text-xs font-semibold border border-emerald-500/30 transition-colors">
+                            Easy
+                        </a>
+                        <a href="{{ url_for('quiz', category=cat.id, difficulty='Medium') }}" class="text-center py-2 px-2 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 text-xs font-semibold border border-amber-500/30 transition-colors">
+                            Medium
+                        </a>
+                        <a href="{{ url_for('quiz', category=cat.id, difficulty='Hard') }}" class="text-center py-2 px-2 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 text-xs font-semibold border border-rose-500/30 transition-colors">
+                            Hard
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Recent Attempts History & Leaderboard Row -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Recent Attempts (2 cols) -->
+        <div class="lg:col-span-2 p-6 rounded-2xl bg-slate-900/80 border border-slate-800">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-clock-rotate-left text-indigo-400"></i>
+                    <h3 class="text-sm font-bold text-white uppercase tracking-wider">Recent Quiz Attempts</h3>
+                </div>
+                <a href="{{ url_for('history') }}" class="text-xs font-semibold text-indigo-400 hover:text-indigo-300">
+                    View All History <i class="fa-solid fa-arrow-right ml-1"></i>
+                </a>
+            </div>
+
+            {% if recent_attempts %}
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs">
+                    <thead>
+                        <tr class="text-slate-400 border-b border-slate-800">
+                            <th class="pb-3 font-semibold">Category</th>
+                            <th class="pb-3 font-semibold">Difficulty</th>
+                            <th class="pb-3 font-semibold">Score</th>
+                            <th class="pb-3 font-semibold">Time</th>
+                            <th class="pb-3 font-semibold">Date</th>
+                            <th class="pb-3 font-semibold text-right">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-800/60">
+                        {% for att in recent_attempts %}
+                        <tr class="hover:bg-slate-800/40 transition-colors">
+                            <td class="py-3 font-medium text-white">{{ att.category_name }}</td>
+                            <td class="py-3">
+                                <span class="px-2 py-0.5 rounded text-[10px] font-semibold
+                                    {% if att.difficulty == 'Easy' %} bg-emerald-500/10 text-emerald-400 border border-emerald-500/30
+                                    {% elif att.difficulty == 'Medium' %} bg-amber-500/10 text-amber-400 border border-amber-500/30
+                                    {% else %} bg-rose-500/10 text-rose-400 border border-rose-500/30 {% endif %}">
+                                    {{ att.difficulty }}
+                                </span>
+                            </td>
+                            <td class="py-3">
+                                <span class="font-bold {{ 'text-emerald-400' if att.percentage >= 60 else 'text-rose-400' }}">
+                                    {{ att.score }}/{{ att.total_questions }} ({{ att.percentage }}%)
+                                </span>
+                            </td>
+                            <td class="py-3 text-slate-400">{{ att.time_taken_seconds }}s</td>
+                            <td class="py-3 text-slate-400">{{ att.created_at[:10] }}</td>
+                            <td class="py-3 text-right">
+                                <a href="{{ url_for('quiz_result', attempt_id=att.id) }}" class="text-indigo-400 hover:text-indigo-300 font-semibold">
+                                    Review <i class="fa-solid fa-chevron-right text-[10px]"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-8 text-slate-500">
+                <i class="fa-solid fa-clipboard-question text-3xl mb-2 text-slate-600"></i>
+                <p class="text-xs">No quiz attempts recorded yet. Start your first quiz above!</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Mini Leaderboard Preview (1 col) -->
+        <div class="p-6 rounded-2xl bg-slate-900/80 border border-slate-800">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-trophy text-amber-400"></i>
+                    <h3 class="text-sm font-bold text-white uppercase tracking-wider">Top Scorers</h3>
+                </div>
+                <a href="{{ url_for('leaderboard') }}" class="text-xs font-semibold text-indigo-400 hover:text-indigo-300">
+                    Full Board <i class="fa-solid fa-arrow-right ml-1"></i>
+                </a>
+            </div>
+
+            <div class="space-y-3">
+                {% for player in leaderboard_preview %}
+                <div class="flex items-center justify-between p-2.5 rounded-xl {{ 'bg-brand-500/10 border border-brand-500/30' if player.id == user.id else 'bg-slate-950/60' }}">
+                    <div class="flex items-center gap-2.5">
+                        <span class="w-6 text-center font-bold text-xs {{ 'text-amber-400' if loop.index == 1 else ('text-slate-300' if loop.index == 2 else ('text-amber-600' if loop.index == 3 else 'text-slate-500')) }}">
+                            {% if loop.index == 1 %}🥇{% elif loop.index == 2 %}🥈{% elif loop.index == 3 %}🥉{% else %}#{{ loop.index }}{% endif %}
+                        </span>
+                        <div>
+                            <p class="text-xs font-bold text-white {{ 'text-brand-300' if player.id == user.id else '' }}">
+                                {{ player.full_name }} {% if player.id == user.id %}<span class="text-[10px] text-brand-400 font-normal">(You)</span>{% endif %}
+                            </p>
+                            <p class="text-[10px] text-slate-400">{{ player.quizzes_taken }} quizzes • 🔥 {{ player.current_streak }}d</p>
+                        </div>
+                    </div>
+                    <span class="text-xs font-bold text-indigo-300">{{ player.total_xp }} XP</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

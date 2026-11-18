@@ -1,0 +1,261 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Questions - Admin Portal{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+            <div class="flex items-center gap-2">
+                <a href="{{ url_for('admin_dashboard') }}" class="text-xs text-amber-400 hover:text-amber-300 font-semibold flex items-center gap-1">
+                    <i class="fa-solid fa-arrow-left"></i> Admin Dashboard
+                </a>
+                <span class="text-xs text-slate-500">•</span>
+                <span class="text-xs text-slate-400">Questions Bank</span>
+            </div>
+            <h1 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight mt-1">
+                Question Management
+            </h1>
+            <p class="text-xs text-slate-400 mt-1">Add, update, or remove assessment questions and explanations.</p>
+        </div>
+
+        <button onclick="openAddQuestionModal()" class="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 shadow-md shadow-indigo-600/30 transition-all flex items-center gap-2 self-start sm:self-auto">
+            <i class="fa-solid fa-plus"></i> Add New Question
+        </button>
+    </div>
+
+    <!-- Filters & Search Form -->
+    <form action="{{ url_for('admin_questions') }}" method="GET" class="p-4 rounded-2xl bg-slate-900 border border-slate-800 flex flex-wrap items-center justify-between gap-4">
+        <div class="flex flex-wrap items-center gap-3">
+            <input type="text" name="search" value="{{ search or '' }}" placeholder="Search questions..."
+                   class="px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500">
+
+            <select name="category" class="px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-300 focus:outline-none focus:border-indigo-500">
+                <option value="">All Categories</option>
+                {% for cat in categories %}
+                <option value="{{ cat.id }}" {% if selected_category == cat.id|string %}selected{% endif %}>{{ cat.name }}</option>
+                {% endfor %}
+            </select>
+
+            <select name="difficulty" class="px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-300 focus:outline-none focus:border-indigo-500">
+                <option value="">All Difficulties</option>
+                <option value="Easy" {% if selected_difficulty == 'Easy' %}selected{% endif %}>Easy</option>
+                <option value="Medium" {% if selected_difficulty == 'Medium' %}selected{% endif %}>Medium</option>
+                <option value="Hard" {% if selected_difficulty == 'Hard' %}selected{% endif %}>Hard</option>
+            </select>
+
+            <button type="submit" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition-colors">
+                Apply Filters
+            </button>
+            <a href="{{ url_for('admin_questions') }}" class="px-3 py-2 text-xs text-slate-400 hover:text-white">Clear</a>
+        </div>
+
+        <span class="text-xs text-slate-400 font-medium">Total: {{ questions|length }} questions</span>
+    </form>
+
+    <!-- Questions Table -->
+    <div class="p-6 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-xl">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+                <thead>
+                    <tr class="text-slate-400 border-b border-slate-800">
+                        <th class="pb-3 font-semibold w-12">ID</th>
+                        <th class="pb-3 font-semibold">Question Text</th>
+                        <th class="pb-3 font-semibold">Category</th>
+                        <th class="pb-3 font-semibold">Difficulty</th>
+                        <th class="pb-3 font-semibold">Correct Option</th>
+                        <th class="pb-3 font-semibold">Points</th>
+                        <th class="pb-3 font-semibold">Timer</th>
+                        <th class="pb-3 font-semibold text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800/60">
+                    {% for q in questions %}
+                    <tr class="hover:bg-slate-800/40 transition-colors">
+                        <td class="py-3.5 font-mono text-slate-500">#{{ q.id }}</td>
+                        <td class="py-3.5 max-w-md">
+                            <p class="font-semibold text-white truncate">{{ q.question_text }}</p>
+                            <p class="text-[11px] text-slate-400 truncate mt-0.5">{{ q.explanation }}</p>
+                        </td>
+                        <td class="py-3.5 text-slate-300">{{ q.category_name }}</td>
+                        <td class="py-3.5">
+                            <span class="px-2 py-0.5 rounded text-[10px] font-bold
+                                {% if q.difficulty == 'Easy' %} bg-emerald-500/10 text-emerald-400 border border-emerald-500/30
+                                {% elif q.difficulty == 'Medium' %} bg-amber-500/10 text-amber-400 border border-amber-500/30
+                                {% else %} bg-rose-500/10 text-rose-400 border border-rose-500/30 {% endif %}">
+                                {{ q.difficulty }}
+                            </span>
+                        </td>
+                        <td class="py-3.5">
+                            <span class="w-6 h-6 rounded-md bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center font-bold text-xs">
+                                {{ q.correct_option }}
+                            </span>
+                        </td>
+                        <td class="py-3.5 font-mono text-indigo-400 font-bold">+{{ q.points }}</td>
+                        <td class="py-3.5 text-slate-400">{{ q.time_limit_seconds }}s</td>
+                        <td class="py-3.5 text-right">
+                            <div class="flex items-center justify-end gap-2">
+                                <button onclick='openEditQuestionModal({{ q|tojson }})' class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors" title="Edit Question">
+                                    <i class="fa-solid fa-pen-to-square text-xs"></i>
+                                </button>
+                                <form action="{{ url_for('api_admin_delete_question', qid=q.id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete Question #{{ q.id }}?')">
+                                    <button type="submit" class="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 transition-colors" title="Delete Question">
+                                        <i class="fa-solid fa-trash-can text-xs"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Add/Edit Question Modal -->
+    <div id="questionModal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl my-8">
+            <div class="flex items-center justify-between pb-4 border-b border-slate-800 mb-6">
+                <h3 class="text-lg font-bold text-white" id="modalTitle">Add New Question</h3>
+                <button onclick="closeQuestionModal()" class="text-slate-400 hover:text-white">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <form id="questionForm" method="POST" action="{{ url_for('api_admin_add_question') }}" class="space-y-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Category</label>
+                        <select name="category_id" id="modalCategory" required class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs focus:outline-none focus:border-indigo-500">
+                            {% for cat in categories %}
+                            <option value="{{ cat.id }}">{{ cat.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Difficulty</label>
+                        <select name="difficulty" id="modalDifficulty" required class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs focus:outline-none focus:border-indigo-500">
+                            <option value="Easy">Easy</option>
+                            <option value="Medium">Medium</option>
+                            <option value="Hard">Hard</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Question Text</label>
+                    <textarea name="question_text" id="modalQuestionText" rows="2" required placeholder="Enter the question prompt here..."
+                              class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs focus:outline-none focus:border-indigo-500"></textarea>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Code Snippet (Optional)</label>
+                    <textarea name="code_snippet" id="modalCodeSnippet" rows="2" placeholder="Optional code snippet or formula..."
+                              class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-indigo-300 font-mono text-xs focus:outline-none focus:border-indigo-500"></textarea>
+                </div>
+
+                <!-- 4 Options -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 mb-1">Option A</label>
+                        <input type="text" name="option_a" id="modalOptionA" required class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 mb-1">Option B</label>
+                        <input type="text" name="option_b" id="modalOptionB" required class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 mb-1">Option C</label>
+                        <input type="text" name="option_c" id="modalOptionC" required class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 mb-1">Option D</label>
+                        <input type="text" name="option_d" id="modalOptionD" required class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-3 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-emerald-400 mb-1">Correct Answer</label>
+                        <select name="correct_option" id="modalCorrectOption" required class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs font-bold">
+                            <option value="A">A</option>
+                            <option value="B">B</option>
+                            <option value="C">C</option>
+                            <option value="D">D</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 mb-1">Points</label>
+                        <input type="number" name="points" id="modalPoints" value="10" min="5" max="100" class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs font-mono">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 mb-1">Time Limit (Sec)</label>
+                        <input type="number" name="time_limit_seconds" id="modalTimeLimit" value="30" min="10" max="300" class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs font-mono">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Educational Explanation</label>
+                    <textarea name="explanation" id="modalExplanation" rows="2" required placeholder="Explain why the correct answer is right..."
+                              class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs focus:outline-none focus:border-indigo-500"></textarea>
+                </div>
+
+                <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
+                    <button type="button" onclick="closeQuestionModal()" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold">
+                        Cancel
+                    </button>
+                    <button type="submit" class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-md shadow-indigo-600/30">
+                        Save Question
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function openAddQuestionModal() {
+        document.getElementById('modalTitle').textContent = 'Add New Question';
+        document.getElementById('questionForm').action = "{{ url_for('api_admin_add_question') }}";
+        document.getElementById('modalQuestionText').value = '';
+        document.getElementById('modalCodeSnippet').value = '';
+        document.getElementById('modalOptionA').value = '';
+        document.getElementById('modalOptionB').value = '';
+        document.getElementById('modalOptionC').value = '';
+        document.getElementById('modalOptionD').value = '';
+        document.getElementById('modalCorrectOption').value = 'A';
+        document.getElementById('modalPoints').value = 10;
+        document.getElementById('modalTimeLimit').value = 30;
+        document.getElementById('modalExplanation').value = '';
+        document.getElementById('questionModal').classList.remove('hidden');
+    }
+
+    function openEditQuestionModal(q) {
+        document.getElementById('modalTitle').textContent = `Edit Question #${q.id}`;
+        document.getElementById('questionForm').action = `/api/admin/questions/${q.id}/edit`;
+        document.getElementById('modalCategory').value = q.category_id;
+        document.getElementById('modalDifficulty').value = q.difficulty;
+        document.getElementById('modalQuestionText').value = q.question_text;
+        document.getElementById('modalCodeSnippet').value = q.code_snippet || '';
+        document.getElementById('modalOptionA').value = q.option_a;
+        document.getElementById('modalOptionB').value = q.option_b;
+        document.getElementById('modalOptionC').value = q.option_c;
+        document.getElementById('modalOptionD').value = q.option_d;
+        document.getElementById('modalCorrectOption').value = q.correct_option;
+        document.getElementById('modalPoints').value = q.points;
+        document.getElementById('modalTimeLimit').value = q.time_limit_seconds;
+        document.getElementById('modalExplanation').value = q.explanation || '';
+        document.getElementById('questionModal').classList.remove('hidden');
+    }
+
+    function closeQuestionModal() {
+        document.getElementById('questionModal').classList.add('hidden');
+    }
+</script>
+{% endblock %}

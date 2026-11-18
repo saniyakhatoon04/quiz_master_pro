@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}QuizMaster Pro - Master Any Subject with Advanced Quizzing{% endblock %}
+
+{% block content %}
+<div class="relative overflow-hidden py-12 lg:py-20">
+    <!-- Background Glow Elements -->
+    <div class="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-indigo-500/10 blur-[130px] rounded-full pointer-events-none"></div>
+    <div class="absolute top-1/3 right-10 w-[400px] h-[400px] bg-purple-500/10 blur-[120px] rounded-full pointer-events-none"></div>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <!-- Hero Section -->
+        <div class="text-center max-w-3xl mx-auto space-y-6">
+            <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-800/80 border border-slate-700 text-xs font-semibold text-indigo-300 shadow-inner">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                Full-Featured Quiz & Performance Intelligence System
+            </div>
+
+            <h1 class="text-4xl sm:text-6xl font-extrabold tracking-tight text-white leading-tight">
+                Level Up Your Knowledge. <br>
+                <span class="bg-gradient-to-r from-brand-400 via-indigo-300 to-purple-400 bg-clip-text text-transparent">
+                    Track Scores, Streaks & Mastery.
+                </span>
+            </h1>
+
+            <p class="text-base sm:text-lg text-slate-400 leading-relaxed">
+                Take timed quizzes across Computer Science, Physics, Math, History, and Finance. Get instant explanations, identify weak topics with AI-style analytics, and rise through the global ranks.
+            </p>
+
+            <!-- CTA Buttons -->
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
+                <a href="{{ url_for('register') }}" class="w-full sm:w-auto px-8 py-3.5 rounded-xl text-base font-bold text-white bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 shadow-xl shadow-indigo-600/30 transition-all hover:-translate-y-0.5">
+                    <i class="fa-solid fa-play mr-2"></i> Start Quizzing Free
+                </a>
+                <a href="{{ url_for('demo_login', role='user') }}" class="w-full sm:w-auto px-8 py-3.5 rounded-xl text-base font-semibold text-slate-200 bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700 transition-all hover:-translate-y-0.5">
+                    <i class="fa-solid fa-user-astronaut mr-2 text-indigo-400"></i> Try Demo Student
+                </a>
+                <a href="{{ url_for('demo_login', role='admin') }}" class="w-full sm:w-auto px-8 py-3.5 rounded-xl text-base font-semibold text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 transition-all hover:-translate-y-0.5">
+                    <i class="fa-solid fa-shield-halved mr-2 text-amber-400"></i> Try Demo Admin
+                </a>
+            </div>
+        </div>
+
+        <!-- Metric Badges -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-16 max-w-4xl mx-auto">
+            <div class="p-5 rounded-2xl bg-slate-900/60 border border-slate-800 text-center">
+                <p class="text-3xl font-extrabold text-white">60+</p>
+                <p class="text-xs font-medium text-slate-400 mt-1 uppercase tracking-wider">Curated Questions</p>
+            </div>
+            <div class="p-5 rounded-2xl bg-slate-900/60 border border-slate-800 text-center">
+                <p class="text-3xl font-extrabold text-indigo-400">6</p>
+                <p class="text-xs font-medium text-slate-400 mt-1 uppercase tracking-wider">Major Categories</p>
+            </div>
+            <div class="p-5 rounded-2xl bg-slate-900/60 border border-slate-800 text-center">
+                <p class="text-3xl font-extrabold text-amber-400">🔥 Daily</p>
+                <p class="text-xs font-medium text-slate-400 mt-1 uppercase tracking-wider">Streak Engine</p>
+            </div>
+            <div class="p-5 rounded-2xl bg-slate-900/60 border border-slate-800 text-center">
+                <p class="text-3xl font-extrabold text-emerald-400">100%</p>
+                <p class="text-xs font-medium text-slate-400 mt-1 uppercase tracking-wider">Detailed Explanations</p>
+            </div>
+        </div>
+
+        <!-- Featured Categories Grid -->
+        <div class="mt-20">
+            <div class="flex items-center justify-between mb-8">
+                <div>
+                    <h2 class="text-2xl font-bold text-white tracking-tight">Explore Quiz Disciplines</h2>
+                    <p class="text-sm text-slate-400 mt-1">Select from diverse topics with tailored difficulty and time limits.</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {% for cat in categories %}
+                <div class="p-6 rounded-2xl bg-slate-900/70 border border-slate-800/80 hover:border-indigo-500/50 hover:bg-slate-900 transition-all duration-300 group">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="w-12 h-12 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center text-xl group-hover:scale-110 transition-transform">
+                            <i class="fa-solid fa-{{ cat.icon }}"></i>
+                        </div>
+                        <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-800 text-slate-300 border border-slate-700">
+                            {{ cat.question_count }} Questions
+                        </span>
+                    </div>
+                    <h3 class="text-lg font-bold text-white group-hover:text-indigo-300 transition-colors">{{ cat.name }}</h3>
+                    <p class="text-sm text-slate-400 mt-2 line-clamp-2">{{ cat.description }}</p>
+                    <div class="mt-4 pt-4 border-t border-slate-800 flex items-center justify-between text-xs font-semibold text-indigo-400">
+                        <span>Easy • Medium • Hard</span>
+                        <span class="group-hover:translate-x-1 transition-transform">Take Quiz <i class="fa-solid fa-arrow-right ml-1"></i></span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Key Highlights -->
+        <div class="mt-20 grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div class="p-6 rounded-2xl bg-gradient-to-b from-slate-900 to-slate-950 border border-slate-800">
+                <div class="w-10 h-10 rounded-lg bg-rose-500/10 text-rose-400 flex items-center justify-center text-lg mb-4">
+                    <i class="fa-solid fa-stopwatch"></i>
+                </div>
+                <h3 class="text-lg font-bold text-white">Dynamic Real-Time Timer</h3>
+                <p class="text-sm text-slate-400 mt-2">Per-question countdown with color shifts, audio ticking cues, and speed bonus multipliers for rapid accuracy.</p>
+            </div>
+
+            <div class="p-6 rounded-2xl bg-gradient-to-b from-slate-900 to-slate-950 border border-slate-800">
+                <div class="w-10 h-10 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center text-lg mb-4">
+                    <i class="fa-solid fa-bullseye"></i>
+                </div>
+                <h3 class="text-lg font-bold text-white">Weak Subject Recovery</h3>
+                <p class="text-sm text-slate-400 mt-2">Automatic diagnostic analytics detect which topics pull your average down, generating custom targeted drill quizzes.</p>
+            </div>
+
+            <div class="p-6 rounded-2xl bg-gradient-to-b from-slate-900 to-slate-950 border border-slate-800">
+                <div class="w-10 h-10 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center text-lg mb-4">
+                    <i class="fa-solid fa-fire"></i>
+                </div>
+                <h3 class="text-lg font-bold text-white">Streak & Habit Tracking</h3>
+                <p class="text-sm text-slate-400 mt-2">Daily quiz streak engine tracks consecutive day achievements with visual calendar dots, longest records, and badges.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

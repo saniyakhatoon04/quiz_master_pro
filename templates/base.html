@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-900 text-slate-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}QuizMaster Pro - Advanced Quiz App{% endblock %}</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#eef2ff',
+                            100: '#e0e7ff',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                            800: '#3730a3',
+                            900: '#312e81'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        code, pre { font-family: 'JetBrains Mono', monospace; }
+    </style>
+</head>
+<body class="h-full flex flex-col bg-slate-950 text-slate-100 antialiased selection:bg-brand-500 selection:text-white">
+
+    <!-- Navigation Bar -->
+    <header class="sticky top-0 z-50 backdrop-blur-md bg-slate-900/80 border-b border-slate-800 transition-all">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <!-- Brand Logo -->
+                <div class="flex items-center gap-3">
+                    <a href="{{ url_for('dashboard' if current_user else 'index') }}" class="flex items-center gap-2.5 group">
+                        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 via-indigo-500 to-purple-500 flex items-center justify-center shadow-lg shadow-indigo-500/20 group-hover:scale-105 transition-transform">
+                            <i class="fa-solid fa-bolt-lightning text-white text-lg"></i>
+                        </div>
+                        <span class="text-xl font-extrabold tracking-tight bg-gradient-to-r from-white via-slate-200 to-indigo-200 bg-clip-text text-transparent">
+                            Quiz<span class="text-brand-500">Master</span><span class="text-xs ml-1 px-1.5 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 font-semibold border border-indigo-500/20">PRO</span>
+                        </span>
+                    </a>
+
+                    {% if current_user %}
+                    <nav class="hidden md:flex items-center ml-8 space-x-1">
+                        <a href="{{ url_for('dashboard') }}" class="px-3 py-2 rounded-lg text-sm font-medium hover:text-white hover:bg-slate-800 transition-colors {{ 'text-brand-400 bg-slate-800/60' if request.endpoint == 'dashboard' else 'text-slate-300' }}">
+                            <i class="fa-solid fa-layer-group mr-1.5"></i> Dashboard
+                        </a>
+                        <a href="{{ url_for('analytics') }}" class="px-3 py-2 rounded-lg text-sm font-medium hover:text-white hover:bg-slate-800 transition-colors {{ 'text-brand-400 bg-slate-800/60' if request.endpoint == 'analytics' else 'text-slate-300' }}">
+                            <i class="fa-solid fa-chart-pie mr-1.5"></i> Performance
+                        </a>
+                        <a href="{{ url_for('leaderboard') }}" class="px-3 py-2 rounded-lg text-sm font-medium hover:text-white hover:bg-slate-800 transition-colors {{ 'text-brand-400 bg-slate-800/60' if request.endpoint == 'leaderboard' else 'text-slate-300' }}">
+                            <i class="fa-solid fa-trophy mr-1.5"></i> Leaderboard
+                        </a>
+                        <a href="{{ url_for('history') }}" class="px-3 py-2 rounded-lg text-sm font-medium hover:text-white hover:bg-slate-800 transition-colors {{ 'text-brand-400 bg-slate-800/60' if request.endpoint == 'history' else 'text-slate-300' }}">
+                            <i class="fa-solid fa-clock-rotate-left mr-1.5"></i> History
+                        </a>
+                        {% if current_user.role == 'admin' %}
+                        <a href="{{ url_for('admin_dashboard') }}" class="px-3 py-2 rounded-lg text-sm font-semibold text-amber-400 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 transition-colors">
+                            <i class="fa-solid fa-shield-halved mr-1.5"></i> Admin Portal
+                        </a>
+                        {% endif %}
+                    </nav>
+                    {% endif %}
+                </div>
+
+                <!-- Right Side Actions -->
+                <div class="flex items-center gap-3">
+                    <!-- Audio Effects Toggle -->
+                    <button id="soundToggleBtn" onclick="toggleSoundEffect()" class="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors" title="Toggle Sound Effects">
+                        <i id="soundIcon" class="fa-solid fa-volume-high"></i>
+                    </button>
+
+                    {% if current_user %}
+                    <!-- Streak Flame Pill -->
+                    <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 font-semibold text-xs sm:text-sm" title="Daily Quiz Streak: {{ current_user.current_streak }} days">
+                        <i class="fa-solid fa-fire animate-pulse text-amber-400"></i>
+                        <span>{{ current_user.current_streak }}d</span>
+                    </div>
+
+                    <!-- XP Pill -->
+                    <div class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/30 text-indigo-300 font-semibold text-xs sm:text-sm">
+                        <i class="fa-solid fa-star text-indigo-400"></i>
+                        <span>{{ current_user.xp }} XP</span>
+                    </div>
+
+                    <!-- User Profile Dropdown -->
+                    <div class="relative" id="userMenuContainer">
+                        <button onclick="toggleUserMenu()" class="flex items-center gap-2 p-1.5 rounded-xl hover:bg-slate-800 transition-colors">
+                            <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-brand-600 to-purple-600 flex items-center justify-center font-bold text-xs text-white uppercase shadow border border-slate-700">
+                                {{ current_user.username[:2] }}
+                            </div>
+                            <span class="hidden sm:block text-sm font-medium text-slate-200">{{ current_user.full_name }}</span>
+                            <i class="fa-solid fa-chevron-down text-xs text-slate-400"></i>
+                        </button>
+
+                        <div id="userDropdown" class="hidden absolute right-0 mt-2 w-56 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl py-2 z-50">
+                            <div class="px-4 py-2 border-b border-slate-800">
+                                <p class="text-xs text-slate-400 font-medium">Signed in as</p>
+                                <p class="text-sm font-semibold text-white truncate">{{ current_user.username }}</p>
+                                <span class="inline-block mt-1 px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider {{ 'bg-amber-500/20 text-amber-400 border border-amber-500/30' if current_user.role == 'admin' else 'bg-slate-800 text-slate-300' }}">
+                                    {{ current_user.role }}
+                                </span>
+                            </div>
+                            <a href="{{ url_for('dashboard') }}" class="flex items-center gap-2.5 px-4 py-2 text-sm text-slate-300 hover:text-white hover:bg-slate-800">
+                                <i class="fa-solid fa-gauge-high w-4"></i> Dashboard
+                            </a>
+                            <a href="{{ url_for('analytics') }}" class="flex items-center gap-2.5 px-4 py-2 text-sm text-slate-300 hover:text-white hover:bg-slate-800">
+                                <i class="fa-solid fa-chart-column w-4"></i> Performance Reports
+                            </a>
+                            <a href="{{ url_for('history') }}" class="flex items-center gap-2.5 px-4 py-2 text-sm text-slate-300 hover:text-white hover:bg-slate-800">
+                                <i class="fa-solid fa-clock-rotate-left w-4"></i> Past Attempts
+                            </a>
+                            {% if current_user.role == 'admin' %}
+                            <div class="border-t border-slate-800 my-1"></div>
+                            <a href="{{ url_for('admin_dashboard') }}" class="flex items-center gap-2.5 px-4 py-2 text-sm text-amber-400 hover:bg-slate-800">
+                                <i class="fa-solid fa-shield-halved w-4"></i> Admin Panel
+                            </a>
+                            <a href="{{ url_for('admin_questions') }}" class="flex items-center gap-2.5 px-4 py-2 text-sm text-amber-300 hover:bg-slate-800">
+                                <i class="fa-solid fa-list-check w-4"></i> Manage Questions
+                            </a>
+                            <a href="{{ url_for('admin_users') }}" class="flex items-center gap-2.5 px-4 py-2 text-sm text-amber-300 hover:bg-slate-800">
+                                <i class="fa-solid fa-users-gear w-4"></i> Manage Users
+                            </a>
+                            {% endif %}
+                            <div class="border-t border-slate-800 my-1"></div>
+                            <a href="{{ url_for('logout') }}" class="flex items-center gap-2.5 px-4 py-2 text-sm text-rose-400 hover:bg-rose-500/10">
+                                <i class="fa-solid fa-arrow-right-from-bracket w-4"></i> Log Out
+                            </a>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="flex items-center gap-2">
+                        <a href="{{ url_for('login') }}" class="px-4 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition-colors">
+                            Log In
+                        </a>
+                        <a href="{{ url_for('register') }}" class="px-4 py-2 rounded-lg text-sm font-semibold text-white bg-brand-600 hover:bg-brand-500 shadow-md shadow-brand-500/25 transition-all">
+                            Get Started
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Flash Messages / Toast Container -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 w-full">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                <div class="mb-3 px-4 py-3 rounded-xl border flex items-center justify-between text-sm shadow-lg animate-fade-in
+                    {% if category == 'success' %} bg-emerald-950/80 border-emerald-500/30 text-emerald-300
+                    {% elif category == 'danger' %} bg-rose-950/80 border-rose-500/30 text-rose-300
+                    {% elif category == 'warning' %} bg-amber-950/80 border-amber-500/30 text-amber-300
+                    {% else %} bg-indigo-950/80 border-indigo-500/30 text-indigo-300 {% endif %}">
+                    <div class="flex items-center gap-2.5">
+                        {% if category == 'success' %}<i class="fa-solid fa-circle-check text-emerald-400"></i>
+                        {% elif category == 'danger' %}<i class="fa-solid fa-triangle-exclamation text-rose-400"></i>
+                        {% elif category == 'warning' %}<i class="fa-solid fa-circle-exclamation text-amber-400"></i>
+                        {% else %}<i class="fa-solid fa-circle-info text-indigo-400"></i>{% endif %}
+                        <span>{{ message }}</span>
+                    </div>
+                    <button onclick="this.parentElement.remove()" class="text-slate-400 hover:text-white ml-4">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <!-- Main Content Area -->
+    <main class="flex-grow w-full">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Global Footer -->
+    <footer class="border-t border-slate-800/80 bg-slate-950/60 mt-16 py-8">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
+            <div class="flex items-center gap-2">
+                <div class="w-6 h-6 rounded-md bg-brand-600 flex items-center justify-center text-white text-xs">
+                    <i class="fa-solid fa-bolt"></i>
+                </div>
+                <span class="font-semibold text-slate-400">QuizMaster Pro</span>
+                <span>— Advanced Score Tracking & Performance Analytics</span>
+            </div>
+            <div class="flex items-center gap-6">
+                <span>SQLite Multi-Category Engine</span>
+                <span>•</span>
+                <span>Automated Difficulty Multipliers</span>
+                <span>•</span>
+                <span>Consecutive Daily Streaks</span>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Global App JS -->
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

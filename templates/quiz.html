@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+
+{% block title %}Interactive Quiz Arena - QuizMaster Pro{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 sm:px-6 py-8" id="quizContainer"
+     data-category-id="{{ category_id }}"
+     data-category-name="{{ category_name }}"
+     data-difficulty="{{ difficulty }}"
+     data-mode="{{ mode }}"
+     data-limit="{{ limit }}">
+
+    <!-- Quiz Arena Header Bar -->
+    <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 mb-6 shadow-xl backdrop-blur-md flex flex-wrap items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center text-lg">
+                <i class="fa-solid fa-graduation-cap"></i>
+            </div>
+            <div>
+                <div class="flex items-center gap-2">
+                    <h1 class="text-base sm:text-lg font-bold text-white tracking-tight" id="categoryTitleDisplay">{{ category_name }}</h1>
+                    <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider
+                        {% if difficulty == 'Easy' %} bg-emerald-500/20 text-emerald-400 border border-emerald-500/30
+                        {% elif difficulty == 'Medium' %} bg-amber-500/20 text-amber-400 border border-amber-500/30
+                        {% elif difficulty == 'Hard' %} bg-rose-500/20 text-rose-400 border border-rose-500/30
+                        {% else %} bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 {% endif %}">
+                        {{ difficulty }}
+                    </span>
+                </div>
+                <p class="text-xs text-slate-400">Timed Interactive Challenge</p>
+            </div>
+        </div>
+
+        <!-- Live Countdown Timer -->
+        <div class="flex items-center gap-4">
+            <div class="flex items-center gap-2 bg-slate-950 px-4 py-2 rounded-xl border border-slate-800 shadow-inner" id="timerBox">
+                <i class="fa-solid fa-clock text-indigo-400 text-sm" id="timerIcon"></i>
+                <div class="text-right">
+                    <span class="text-xs text-slate-400 uppercase tracking-widest font-semibold block text-[10px]">Time Left</span>
+                    <span class="text-lg font-extrabold text-white font-mono" id="timerDisplay">00:30</span>
+                </div>
+            </div>
+
+            <!-- Question Palette Toggle Button -->
+            <button onclick="toggleQuestionPalette()" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold border border-slate-700 transition-colors flex items-center gap-1.5" title="Toggle Question Navigator">
+                <i class="fa-solid fa-table-cells-large text-indigo-400"></i>
+                <span class="hidden sm:inline">Palette</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Progress Indicator -->
+    <div class="mb-6 space-y-1.5">
+        <div class="flex items-center justify-between text-xs text-slate-400">
+            <span class="font-medium" id="questionProgressText">Question 1 of 10</span>
+            <span class="font-semibold text-indigo-400" id="progressPercentageText">10%</span>
+        </div>
+        <div class="w-full h-2 rounded-full bg-slate-800 overflow-hidden">
+            <div id="progressBar" class="h-full rounded-full bg-gradient-to-r from-brand-600 to-indigo-500 transition-all duration-300" style="width: 10%"></div>
+        </div>
+    </div>
+
+    <!-- Question Palette Drawer (Collapsible) -->
+    <div id="questionPaletteDrawer" class="hidden mb-6 p-4 rounded-2xl bg-slate-900 border border-slate-800 shadow-xl transition-all">
+        <div class="flex items-center justify-between mb-3">
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Question Navigator</span>
+            <div class="flex items-center gap-3 text-[11px] text-slate-400">
+                <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block"></span> Answered</span>
+                <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block"></span> Flagged</span>
+                <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-slate-700 inline-block"></span> Pending</span>
+            </div>
+        </div>
+        <div class="grid grid-cols-5 sm:grid-cols-10 gap-2" id="paletteGrid">
+            <!-- Populated dynamically via JS -->
+        </div>
+    </div>
+
+    <!-- Loading State Screen -->
+    <div id="quizLoading" class="py-24 text-center">
+        <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-brand-500 border-t-transparent mb-4"></div>
+        <h3 class="text-lg font-bold text-white">Preparing Your Quiz...</h3>
+        <p class="text-xs text-slate-400 mt-1">Retrieving timed questions from database</p>
+    </div>
+
+    <!-- Question Interactive Card -->
+    <div id="quizCard" class="hidden bg-slate-900/95 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl relative">
+        <!-- Top metadata -->
+        <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-2">
+                <span class="px-2.5 py-1 rounded-lg bg-indigo-500/10 text-indigo-400 font-bold text-xs border border-indigo-500/20" id="qPointsBadge">
+                    +10 Points
+                </span>
+                <span class="text-xs text-slate-400" id="qDifficultyLabel">Medium</span>
+            </div>
+
+            <!-- Flag Button -->
+            <button id="flagBtn" onclick="toggleFlagCurrentQuestion()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-amber-400 bg-slate-800/80 hover:bg-slate-800 border border-slate-700 transition-colors">
+                <i class="fa-regular fa-bookmark" id="flagIcon"></i>
+                <span id="flagText">Review Later</span>
+            </button>
+        </div>
+
+        <!-- Question Text -->
+        <h2 class="text-lg sm:text-xl font-bold text-white leading-relaxed mb-4" id="questionText">
+            Loading question...
+        </h2>
+
+        <!-- Code Snippet Box (conditional) -->
+        <div id="codeSnippetBox" class="hidden mb-6 p-4 rounded-xl bg-slate-950 border border-slate-800 text-xs font-mono text-indigo-300 overflow-x-auto">
+            <pre><code id="codeSnippetContent"></code></pre>
+        </div>
+
+        <!-- 4 Options Cards -->
+        <div class="grid grid-cols-1 gap-3.5 mb-8" id="optionsContainer">
+            <!-- Dynamically rendered -->
+        </div>
+
+        <!-- Bottom Navigation Controls -->
+        <div class="flex items-center justify-between pt-4 border-t border-slate-800/80">
+            <button id="prevBtn" onclick="prevQuestion()" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs sm:text-sm border border-slate-700 transition-colors flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed">
+                <i class="fa-solid fa-chevron-left"></i> Previous
+            </button>
+
+            <div class="flex items-center gap-2">
+                <button id="nextBtn" onclick="nextQuestion()" class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs sm:text-sm shadow-md shadow-indigo-600/30 transition-all flex items-center gap-2">
+                    Next <i class="fa-solid fa-chevron-right"></i>
+                </button>
+                <button id="submitBtn" onclick="confirmSubmitQuiz()" class="hidden px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs sm:text-sm shadow-lg shadow-emerald-600/30 transition-all flex items-center gap-2">
+                    <i class="fa-solid fa-check-double"></i> Submit Assessment
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Submit Confirmation Modal -->
+    <div id="submitModal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl text-center space-y-5 animate-scale-up">
+            <div class="w-14 h-14 rounded-2xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center text-2xl mx-auto border border-indigo-500/20">
+                <i class="fa-solid fa-clipboard-check"></i>
+            </div>
+            <div>
+                <h3 class="text-xl font-bold text-white">Ready to Submit Quiz?</h3>
+                <p class="text-xs text-slate-400 mt-1">Check your assessment summary before finalizing your answers.</p>
+            </div>
+
+            <!-- Summary Status -->
+            <div class="grid grid-cols-3 gap-2 bg-slate-950 p-3 rounded-2xl border border-slate-800 text-xs">
+                <div>
+                    <span class="block text-slate-400 text-[10px] uppercase">Answered</span>
+                    <span class="text-base font-extrabold text-emerald-400" id="modalAnsweredCount">0</span>
+                </div>
+                <div>
+                    <span class="block text-slate-400 text-[10px] uppercase">Unanswered</span>
+                    <span class="text-base font-extrabold text-rose-400" id="modalUnansweredCount">0</span>
+                </div>
+                <div>
+                    <span class="block text-slate-400 text-[10px] uppercase">Flagged</span>
+                    <span class="text-base font-extrabold text-amber-400" id="modalFlaggedCount">0</span>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-3 pt-2">
+                <button onclick="closeSubmitModal()" class="w-1/2 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold border border-slate-700 transition-colors">
+                    Back to Review
+                </button>
+                <button onclick="finalizeAndSubmit()" id="finalizeSubmitBtn" class="w-1/2 py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-bold shadow-lg shadow-emerald-600/30 transition-all">
+                    Confirm & Submit
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/quiz.js') }}"></script>
+{% endblock %}
